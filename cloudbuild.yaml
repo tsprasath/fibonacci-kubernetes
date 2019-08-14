@@ -2,21 +2,21 @@
 steps:
   - name: 'gcr.io/kaniko-project/executor:latest'
     args:
-    - './client'
+    - -c ./client
     - --destination=gcr.io/$PROJECT_ID/fibonacci-client
     - --cache=true
     - --cache-ttl=6h
     waitFor: ['-']
   - name: 'gcr.io/kaniko-project/executor:latest'
     args:
-    - './server'
+    - -c ./server
     - --destination=gcr.io/$PROJECT_ID/fibonacci-server
     - --cache=true
     - --cache-ttl=6h
     waitFor: ['-']
   - name: 'gcr.io/kaniko-project/executor:latest'
     args:
-    - './worker'  
+    - -c ./worker  
     - --destination=gcr.io/$PROJECT_ID/fibonacci-worker
     - --cache=true
     - --cache-ttl=6h
