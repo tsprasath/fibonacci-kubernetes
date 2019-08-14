@@ -1,23 +1,19 @@
-# Use Kaniko to build, cache and upload docker images.
 steps:
-  - name: 'gcr.io/kaniko-project/executor:latest'
-    args:
-    - --context=./client
-    - --destination=gcr.io/$PROJECT_ID/fibonacci-client
-    - --cache=true
-    - --cache-ttl=6h
-    waitFor: ['-']
-  - name: 'gcr.io/kaniko-project/executor:latest'
-    args:
-    - --context=./server
-    - --destination=gcr.io/$PROJECT_ID/fibonacci-server
-    - --cache=true
-    - --cache-ttl=6h
-    waitFor: ['-']
-  - name: 'gcr.io/kaniko-project/executor:latest'
-    args:
-    - --context=./worker  
-    - --destination=gcr.io/$PROJECT_ID/fibonacci-worker
-    - --cache=true
-    - --cache-ttl=6h
-    waitFor: ['-']
+# Build client image.
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/fibonacci-client', './client']
+  waitFor: ['-']
+# Build server image.
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/fibonacci-server', './server']
+  waitFor: ['-']
+# Build worker image.
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker', './worker']
+  waitFor: ['-']
+
+# Upload images to GCR.
+images:
+- 'gcr.io/$PROJECT_ID/fibonacci-client'
+- 'gcr.io/$PROJECT_ID/fibonacci-server'
+- 'gcr.io/$PROJECT_ID/fibonacci-worker'
