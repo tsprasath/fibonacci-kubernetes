@@ -3,6 +3,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-client:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA', 
     '.']
@@ -13,6 +14,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-server:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA', 
     '.']
@@ -23,6 +25,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA', 
     '.']
@@ -63,6 +66,8 @@ steps:
     docker push gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
     echo "skipping..."
   waitFor: ['worker-build']
+
+timeout: 240s
 
 # Apply Kubernetes configs.
 # - name: 'gcr.io/cloud-builders/kubectl'
