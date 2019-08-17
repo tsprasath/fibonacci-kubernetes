@@ -1,0 +1,35 @@
+steps:
+# Build worker image.
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest',
+    '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest', 
+    '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA', 
+    '.']
+  id: 'worker-build'
+  waitFor: ['-']
+# Push worker image to GCR on master branch change.
+- name: 'gcr.io/cloud-builders/docker'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    docker push gcr.io/$PROJECT_ID/fibonacci-worker:latest &&
+    docker push gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
+    echo "skipping..."
+  waitFor: ['worker-build']
+# Push images to GKE cluster.
+# - name: 'gcr.io/cloud-builders/kubectl'
+#   entrypoint: 'bash'
+#   args:
+#   - '-c'
+#   - |
+#     [[ "$BRANCH_NAME" == "master" ]] && /builders/kubectl.bash set image deployment [deployment] [container]=gcr.io/$PROJECT_ID/[image]:[tag]
+#   env:
+#   - 'CLOUDSDK_COMPUTE_ZONE=[zone]'
+#   - 'CLOUDSDK_CONTAINER_CLUSTER=[cluster]'
+
+# A global timeout of 4min.
+timeout: 240s

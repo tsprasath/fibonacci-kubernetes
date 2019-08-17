@@ -1,95 +1,39 @@
 steps:
-# Build client image.
-- name: 'gcr.io/cloud-builders/docker'
-  args: [
-    'build', 
-    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-client:latest',
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:latest', 
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA', 
-    '.']
-  dir: './client'
-  id: 'client-build'
+# Run CI/CD for each individual service.
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['builds', 'submit', './client', '--config', 'cloudbuild.yaml']
   waitFor: ['-']
-# Build server image.
-- name: 'gcr.io/cloud-builders/docker'
-  args: [
-    'build', 
-    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-server:latest',
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:latest', 
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA', 
-    '.']
-  dir: './server'
-  id: 'server-build'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['builds', 'submit', './server', '--config', 'cloudbuild.yaml']
   waitFor: ['-']
-# Build worker image.
-- name: 'gcr.io/cloud-builders/docker'
-  args: [
-    'build', 
-    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest',
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest', 
-    '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA', 
-    '.']
-  dir: './worker'
-  id: 'worker-build'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['builds', 'submit', './worker', '--config', 'cloudbuild.yaml']
   waitFor: ['-']
-
-# Push client image to GCR on master branch change.
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    [[ "$BRANCH_NAME" == "master" ]] && 
-    docker push gcr.io/$PROJECT_ID/fibonacci-client:latest &&
-    docker push gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA ||
-    echo "skipping..."
-  waitFor: ['client-build']
-# Push server image to GCR on master branch change.
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    [[ "$BRANCH_NAME" == "master" ]] && 
-    docker push gcr.io/$PROJECT_ID/fibonacci-server:latest &&
-    docker push gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA ||
-    echo "skipping..."
-  waitFor: ['server-build']
-# Push worker image to GCR on master branch change.
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    [[ "$BRANCH_NAME" == "master" ]] && 
-    docker push gcr.io/$PROJECT_ID/fibonacci-worker:latest &&
-    docker push gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
-    echo "skipping..."
-  waitFor: ['worker-build']
 
 timeout: 240s
 
+# A more automated way to look for all cloudbuild.yaml.
+# Inspired by: https://github.com/GoogleCloudPlatform/cloud-builders-community/blob/master/cloudbuild.yaml
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   entrypoint: 'bash'
+#   args:
+#   - '-c'
+#   - |
+#     for d in */; do
+#       config="${d}cloudbuild.yaml"
+#       if [[ ! -f "${config}" ]]; then
+#         continue
+#       fi
+
+#       echo "Building $d ... "
+#       (
+#         gcloud builds submit $d --config=${config}
+#       ) &
+#     done
+#     wait
 # Apply Kubernetes configs.
 # - name: 'gcr.io/cloud-builders/kubectl'
 #   args: ['apply', '-f', 'k8s']
 #   env:
 #   - 'CLOUDSDK_COMPUTE_ZONE=<cluster-zone>'
 #   - 'CLOUDSDK_CONTAINER_CLUSTER=<cluster-name>'
-# Push image to GKE cluster.
-# - name: 'gcr.io/cloud-builders/kubectl'
-#   entrypoint: 'bash'
-#   args:
-#   - '-c'
-#   - |
-#     [[ "$BRANCH_NAME" == "master" ]] && /builders/kubectl.bash set image deployment [deployment] [container]=gcr.io/$PROJECT_ID/[image]:[tag]
-#   env:
-#   - 'CLOUDSDK_COMPUTE_ZONE=[zone]'
-#   - 'CLOUDSDK_CONTAINER_CLUSTER=[cluster]'
-# Upload images to GCR and DockerHub.
-# images:
-# - 'gcr.io/$PROJECT_ID/fibonacci-client'
-# - 'gcr.io/$PROJECT_ID/fibonacci-server'
-# - 'gcr.io/$PROJECT_ID/fibonacci-worker'
-# - 'jjzhan/fibonacci-client'
-# - 'jjzhan/fibonacci-server'
-# - 'jjzhan/fibonacci-worker'
