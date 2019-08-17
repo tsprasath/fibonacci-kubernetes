@@ -1,26 +1,15 @@
 steps:
-# Cache the first Docker build stage of client. To save build time dramatically.
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    docker build --cache-from gcr.io/$PROJECT_ID/client-cache:latest -t gcr.io/$PROJECT_ID/client-cache:latest --target=builder .
-  dir: './client'
-  id: 'client-cache'
-  waitFor: ['-']
-
 # Build client image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
-    '--cache-from', 'gcr.io/$PROJECT_ID/client-cache:latest',
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-client:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA', 
     '.']
   dir: './client'
   id: 'client-build'
-  waitFor: ['client-cache']
+  waitFor: ['-']
 # Build server image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
@@ -44,16 +33,6 @@ steps:
   id: 'worker-build'
   waitFor: ['-']
 
-# Push client first stage docker cache to GCR.
-- name: 'gcr.io/cloud-builders/docker'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    [[ "$BRANCH_NAME" == "master" ]] && 
-    docker push gcr.io/$PROJECT_ID/client-cache:latest ||
-    echo "skipping..."
-  waitFor: ['client-cache']
 # Push client image to GCR on master branch change.
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
