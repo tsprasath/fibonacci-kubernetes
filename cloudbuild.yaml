@@ -5,7 +5,7 @@ steps:
     'build', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA', 
-    './client']
+    '.']
   dir: './client'
   id: 'client-build'
   waitFor: ['-']
@@ -15,7 +15,7 @@ steps:
     'build', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA', 
-    './server']
+    '.']
   dir: './server'
   id: 'server-build'
   waitFor: ['-']
@@ -25,7 +25,7 @@ steps:
     'build', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA', 
-    './worker']
+    '.']
   dir: './worker'
   id: 'worker-build'
   waitFor: ['-']
