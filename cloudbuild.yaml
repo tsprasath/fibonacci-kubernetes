@@ -75,7 +75,9 @@ steps:
   args:
   - '-c'
   - |
-    [[ "$BRANCH_NAME" == "master" ]] && /builders/kubectl.bash apply -f k8s
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    /builders/kubectl.bash apply -f k8s || 
+    echo "skipping..."
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-west1-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=fibonacci-cluster-1'
@@ -88,9 +90,10 @@ steps:
   - '-c'
   - |
     [[ "$BRANCH_NAME" == "master" ]] && 
-    /builders/kubectl.bash set image deployments/client-deployment client=gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA
-    /builders/kubectl.bash set image deployments/server-deployment server=gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA
-    /builders/kubectl.bash set image deployments/worker-deployment worker=gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA
+    /builders/kubectl.bash set image deployments/client-deployment client=gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA &&
+    /builders/kubectl.bash set image deployments/server-deployment server=gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA &&
+    /builders/kubectl.bash set image deployments/worker-deployment worker=gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
+    echo "skipping..."
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=us-west1-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=fibonacci-cluster-1'
