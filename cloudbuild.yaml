@@ -1,5 +1,5 @@
 steps:
-# Build client image.
+# Build client production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
@@ -10,7 +10,7 @@ steps:
   dir: './client'
   id: 'client-build'
   waitFor: ['-']
-# Build server image.
+# Build server production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
@@ -21,7 +21,7 @@ steps:
   dir: './server'
   id: 'server-build'
   waitFor: ['-']
-# Build worker image.
+# Build worker production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
@@ -85,11 +85,3 @@ timeout: 240s
 #   env:
 #   - 'CLOUDSDK_COMPUTE_ZONE=[zone]'
 #   - 'CLOUDSDK_CONTAINER_CLUSTER=[cluster]'
-# Upload images to GCR and DockerHub.
-# images:
-# - 'gcr.io/$PROJECT_ID/fibonacci-client'
-# - 'gcr.io/$PROJECT_ID/fibonacci-server'
-# - 'gcr.io/$PROJECT_ID/fibonacci-worker'
-# - 'jjzhan/fibonacci-client'
-# - 'jjzhan/fibonacci-server'
-# - 'jjzhan/fibonacci-worker'
