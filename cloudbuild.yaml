@@ -1,28 +1,31 @@
 steps:
-# Build client image.
+# Build client production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-client:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA', 
     '.']
   dir: './client'
   id: 'client-build'
   waitFor: ['-']
-# Build server image.
+# Build server production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-server:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA', 
     '.']
   dir: './server'
   id: 'server-build'
   waitFor: ['-']
-# Build worker image.
+# Build worker production image.
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 
+    '--cache-from', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest',
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:latest', 
     '-t', 'gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA', 
     '.']
@@ -40,6 +43,7 @@ steps:
     docker push gcr.io/$PROJECT_ID/fibonacci-client:latest &&
     docker push gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA ||
     echo "skipping..."
+  id: 'client-push'
   waitFor: ['client-build']
 # Push server image to GCR on master branch change.
 - name: 'gcr.io/cloud-builders/docker'
@@ -51,6 +55,7 @@ steps:
     docker push gcr.io/$PROJECT_ID/fibonacci-server:latest &&
     docker push gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA ||
     echo "skipping..."
+  id: 'server-push'
   waitFor: ['server-build']
 # Push worker image to GCR on master branch change.
 - name: 'gcr.io/cloud-builders/docker'
@@ -62,29 +67,36 @@ steps:
     docker push gcr.io/$PROJECT_ID/fibonacci-worker:latest &&
     docker push gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
     echo "skipping..."
+  id: 'worker-push'
   waitFor: ['worker-build']
-
-# Apply Kubernetes configs.
-# - name: 'gcr.io/cloud-builders/kubectl'
-#   args: ['apply', '-f', 'k8s']
-#   env:
-#   - 'CLOUDSDK_COMPUTE_ZONE=<cluster-zone>'
-#   - 'CLOUDSDK_CONTAINER_CLUSTER=<cluster-name>'
-# Push image to GKE cluster.
-# - name: 'gcr.io/cloud-builders/kubectl'
-#   entrypoint: 'bash'
-#   args:
-#   - '-c'
-#   - |
-#     [[ "$BRANCH_NAME" == "master" ]] && /builders/kubectl.bash set image deployment [deployment] [container]=gcr.io/$PROJECT_ID/[image]:[tag]
-#   env:
-#   - 'CLOUDSDK_COMPUTE_ZONE=[zone]'
-#   - 'CLOUDSDK_CONTAINER_CLUSTER=[cluster]'
-# Upload images to GCR and DockerHub.
-# images:
-# - 'gcr.io/$PROJECT_ID/fibonacci-client'
-# - 'gcr.io/$PROJECT_ID/fibonacci-server'
-# - 'gcr.io/$PROJECT_ID/fibonacci-worker'
-# - 'jjzhan/fibonacci-client'
-# - 'jjzhan/fibonacci-server'
-# - 'jjzhan/fibonacci-worker'
+# Apply Kubernetes configs on master branch change.
+- name: 'gcr.io/cloud-builders/kubectl'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    /builders/kubectl.bash apply -f k8s || 
+    echo "skipping..."
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=us-west1-a'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=fibonacci-cluster-1'
+  id: 'apply-kube-configs'
+  waitFor: ['client-push', 'server-push', 'worker-push']
+# Push image to GKE cluster on master branch change.
+- name: 'gcr.io/cloud-builders/kubectl'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    /builders/kubectl.bash set image deployments/client-deployment client=gcr.io/$PROJECT_ID/fibonacci-client:$COMMIT_SHA &&
+    /builders/kubectl.bash set image deployments/server-deployment server=gcr.io/$PROJECT_ID/fibonacci-server:$COMMIT_SHA &&
+    /builders/kubectl.bash set image deployments/worker-deployment worker=gcr.io/$PROJECT_ID/fibonacci-worker:$COMMIT_SHA ||
+    echo "skipping..."
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=us-west1-a'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=fibonacci-cluster-1'
+  waitFor: ['apply-kube-configs']
+# Will enable once I get a rough time.
+#timeout: 240s
