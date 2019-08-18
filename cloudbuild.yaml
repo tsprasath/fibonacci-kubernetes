@@ -69,6 +69,17 @@ steps:
     echo "skipping..."
   id: 'worker-push'
   waitFor: ['worker-build']
+# Configure to point to the GKE Kubernetes cluster.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    gcloud container clusters get-credentials fibonacci-cluster-1 ||
+    echo "skipping..."
+  id: 'cluster-config'
+  waitFor: ['-']
 # Apply Kubernetes configs on master branch change.
 - name: 'gcr.io/cloud-builders/kubectl'
   entrypoint: 'bash'
