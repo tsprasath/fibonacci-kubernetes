@@ -1,7 +1,7 @@
 # fibonacci-kubernetes
 An over-the-top implementation of calculating Fibonacci value, with Golang, React, Redis, Postgres, NGINX. All running in Docker containers, on a Kubernetes cluster. 
 
-How to run it locally:
+How to run it in Kubernetes locally:
 * Download the repo. Make sure you have Docker installed, kubectl installed, minikube installed. 
 * Run `minikube start` to start a Minikube Kubernetes cluster.
 * Run `kubectl apply -f k8s`. This will apply all of the Kubernetes configs to your local cluster.
