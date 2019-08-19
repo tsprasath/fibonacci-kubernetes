@@ -69,6 +69,17 @@ steps:
     echo "skipping..."
   id: 'worker-push'
   waitFor: ['worker-build']
+# Configure to point to the GKE Kubernetes cluster.
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && 
+    gcloud container clusters get-credentials fibonacci-cluster-1 --zone us-west1-a ||
+    echo "skipping..."
+  id: 'cluster-config'
+  waitFor: ['-']
 # Apply Kubernetes configs on master branch change.
 - name: 'gcr.io/cloud-builders/kubectl'
   entrypoint: 'bash'
@@ -82,7 +93,7 @@ steps:
   - 'CLOUDSDK_COMPUTE_ZONE=us-west1-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=fibonacci-cluster-1'
   id: 'apply-kube-configs'
-  waitFor: ['client-push', 'server-push', 'worker-push']
+  waitFor: ['cluster-config', 'client-push', 'server-push', 'worker-push']
 # Push image to GKE cluster on master branch change.
 - name: 'gcr.io/cloud-builders/kubectl'
   entrypoint: 'bash'
