@@ -18,7 +18,14 @@ spec:
             claimName: database-persistent-volume-claim
       containers: 
         - name: postgres
-          image: postgres
+          image: postgres:alpine
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "50m"
+            limits:
+              memory: "250Mi"
+              cpu: "250m"
           ports:
             - containerPort: 5432
           volumeMounts:

@@ -15,5 +15,12 @@ spec:
       containers:
         - name: client
           image: jjzhan/fibonacci-client
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "50m"
+            limits:
+              memory: "150Mi"
+              cpu: "150m"
           ports:
             - containerPort: 3000
